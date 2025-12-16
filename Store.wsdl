@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="Store"
+  targetNamespace="http://exemple.com/store"
+  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+  xmlns:vprop="http://docs.oasis-open.org/wsbpel/2.0/varprop"
+  xmlns:plnk="http://docs.oasis-open.org/wsbpel/2.0/plnktype"
+  xmlns:store="http://exemple.com/store">
+
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://exemple.com/store" elementFormDefault="qualified">
+      <xsd:element name="productInfo">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="commandeId" type="xsd:string"/>
+            <xsd:element name="idProduit" type="xsd:string"/>
+            <xsd:element name="quantite" type="xsd:int"/>
+            <xsd:element name="adresseLivraison" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="manufacturingStatus">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="commandeId" type="xsd:string"/>
+            <xsd:element name="statut" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="shippingStatus">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="commandeId" type="xsd:string"/>
+            <xsd:element name="statut" type="xsd:string"/>
+            <xsd:element name="trackingId" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+    </xsd:schema>
+  </wsdl:types>
+
+  <wsdl:message name="productInfoMessage">
+    <wsdl:part name="payload" element="store:productInfo"/>
+  </wsdl:message>
+
+  <wsdl:message name="manufacturingStatusMessage">
+    <wsdl:part name="payload" element="store:manufacturingStatus"/>
+  </wsdl:message>
+
+  <wsdl:message name="shippingStatusMessage">
+    <wsdl:part name="payload" element="store:shippingStatus"/>
+  </wsdl:message>
+
+  <wsdl:portType name="StorePortType">
+    <wsdl:operation name="startRestock">
+      <wsdl:input message="store:productInfoMessage"/>
+    </wsdl:operation>
+    <wsdl:operation name="receiveManufacturingStatus">
+      <wsdl:input message="store:manufacturingStatusMessage"/>
+    </wsdl:operation>
+    <wsdl:operation name="receiveShippingStatus">
+      <wsdl:input message="store:shippingStatusMessage"/>
+    </wsdl:operation>
+  </wsdl:portType>
+
+  <!-- Propriété de corrélation (commandeId) pour relier les callbacks à l'instance StoreProcess -->
+  <vprop:property name="propCommandeId" type="xsd:string"/>
+
+  <vprop:propertyAlias propertyName="store:propCommandeId"
+                       messageType="store:productInfoMessage"
+                       part="payload"
+                       query="/store:productInfo/store:commandeId"/>
+  <vprop:propertyAlias propertyName="store:propCommandeId"
+                       messageType="store:manufacturingStatusMessage"
+                       part="payload"
+                       query="/store:manufacturingStatus/store:commandeId"/>
+  <vprop:propertyAlias propertyName="store:propCommandeId"
+                       messageType="store:shippingStatusMessage"
+                       part="payload"
+                       query="/store:shippingStatus/store:commandeId"/>
+
+  <wsdl:binding name="StoreBinding" type="store:StorePortType">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
+    <wsdl:operation name="startRestock">
+      <soap:operation soapAction="startRestock"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+    </wsdl:operation>
+    <wsdl:operation name="receiveManufacturingStatus">
+      <soap:operation soapAction="receiveManufacturingStatus"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+    </wsdl:operation>
+    <wsdl:operation name="receiveShippingStatus">
+      <soap:operation soapAction="receiveShippingStatus"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+    </wsdl:operation>
+  </wsdl:binding>
+
+  <wsdl:service name="StoreService">
+    <wsdl:port name="StorePort" binding="store:StoreBinding">
+      <soap:address location="http://localhost:8080/ode/processes/StoreService"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

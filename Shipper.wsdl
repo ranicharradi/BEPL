@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="Shipper"
+  targetNamespace="http://exemple.com/shipper"
+  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+  xmlns:plnk="http://docs.oasis-open.org/wsbpel/2.0/plnktype"
+  xmlns:ship="http://exemple.com/shipper"
+  xmlns:store="http://exemple.com/store">
+
+  <wsdl:import namespace="http://exemple.com/store" location="Store.wsdl"/>
+
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://exemple.com/shipper" elementFormDefault="qualified">
+      <xsd:element name="shippingDetails">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="commandeId" type="xsd:string"/>
+            <xsd:element name="adresseLivraison" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="shippingStatus">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="commandeId" type="xsd:string"/>
+            <xsd:element name="statut" type="xsd:string"/>
+            <xsd:element name="trackingId" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+    </xsd:schema>
+  </wsdl:types>
+
+  <wsdl:message name="shippingDetailsMessage">
+    <wsdl:part name="payload" element="ship:shippingDetails"/>
+  </wsdl:message>
+
+  <wsdl:message name="shippingStatusMessage">
+    <wsdl:part name="payload" element="ship:shippingStatus"/>
+  </wsdl:message>
+
+  <wsdl:portType name="ShipperPortType">
+    <wsdl:operation name="requestShipping">
+      <wsdl:input message="ship:shippingDetailsMessage"/>
+    </wsdl:operation>
+  </wsdl:portType>
+
+  <wsdl:portType name="ShipperCallbackPortType">
+    <wsdl:operation name="sendShippingStatus">
+      <wsdl:input message="ship:shippingStatusMessage"/>
+    </wsdl:operation>
+  </wsdl:portType>
+
+  <plnk:partnerLinkType name="pltShipperStore">
+    <plnk:role name="shipper" portType="ship:ShipperPortType"/>
+    <plnk:role name="store" portType="store:StorePortType"/>
+  </plnk:partnerLinkType>
+
+  <wsdl:binding name="ShipperBinding" type="ship:ShipperPortType">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
+    <wsdl:operation name="requestShipping">
+      <soap:operation soapAction="requestShipping"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+    </wsdl:operation>
+  </wsdl:binding>
+
+  <wsdl:service name="ShipperService">
+    <wsdl:port name="ShipperPort" binding="ship:ShipperBinding">
+      <soap:address location="http://localhost:8080/ode/processes/ShipperService"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

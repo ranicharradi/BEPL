@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:store="http://exemple.com/store">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <store:productInfo>
+      <store:commandeId>CDE-003</store:commandeId>
+      <store:idProduit>P-TEST</store:idProduit>
+      <store:quantite>1</store:quantite>
+      <store:adresseLivraison>3 Rue de Test, Tunis</store:adresseLivraison>
+    </store:productInfo>
+  </soapenv:Body>
+</soapenv:Envelope>

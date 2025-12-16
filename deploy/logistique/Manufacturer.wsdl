@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="Manufacturer"
+  targetNamespace="http://exemple.com/manufacturer"
+  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+  xmlns:plnk="http://docs.oasis-open.org/wsbpel/2.0/plnktype"
+  xmlns:man="http://exemple.com/manufacturer"
+  xmlns:ship="http://exemple.com/shipper"
+  xmlns:store="http://exemple.com/store">
+
+  <wsdl:import namespace="http://exemple.com/store" location="Store.wsdl"/>
+  <wsdl:import namespace="http://exemple.com/shipper" location="Shipper.wsdl"/>
+
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://exemple.com/manufacturer" elementFormDefault="qualified">
+      <xsd:element name="orderDetails">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="commandeId" type="xsd:string"/>
+            <xsd:element name="idProduit" type="xsd:string"/>
+            <xsd:element name="quantite" type="xsd:int"/>
+            <xsd:element name="adresseLivraison" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="statusInfo">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="commandeId" type="xsd:string"/>
+            <xsd:element name="statut" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+    </xsd:schema>
+  </wsdl:types>
+
+  <wsdl:message name="orderDetailsMessage">
+    <wsdl:part name="payload" element="man:orderDetails"/>
+  </wsdl:message>
+
+  <wsdl:message name="manufacturingStatusMessage">
+    <wsdl:part name="payload" element="man:statusInfo"/>
+  </wsdl:message>
+
+  <wsdl:portType name="ManufacturerPortType">
+    <wsdl:operation name="requestOrder">
+      <wsdl:input message="man:orderDetailsMessage"/>
+    </wsdl:operation>
+  </wsdl:portType>
+
+  <wsdl:portType name="ManufacturerCallbackPortType">
+    <wsdl:operation name="sendManufacturingStatus">
+      <wsdl:input message="man:manufacturingStatusMessage"/>
+    </wsdl:operation>
+  </wsdl:portType>
+
+  <plnk:partnerLinkType name="pltStoreManufacturer">
+    <plnk:role name="manufacturer" portType="man:ManufacturerPortType"/>
+    <plnk:role name="store" portType="store:StorePortType"/>
+  </plnk:partnerLinkType>
+
+  <plnk:partnerLinkType name="pltManufacturerShipper">
+    <plnk:role name="manufacturer" portType="man:ManufacturerPortType"/>
+    <plnk:role name="shipper" portType="ship:ShipperPortType"/>
+  </plnk:partnerLinkType>
+
+  <wsdl:binding name="ManufacturerBinding" type="man:ManufacturerPortType">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
+    <wsdl:operation name="requestOrder">
+      <soap:operation soapAction="requestOrder"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+    </wsdl:operation>
+  </wsdl:binding>
+
+  <wsdl:service name="ManufacturerService">
+    <wsdl:port name="ManufacturerPort" binding="man:ManufacturerBinding">
+      <soap:address location="http://localhost:8080/ode/processes/ManufacturerService"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

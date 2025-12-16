@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpel:process name="StoreProcess"
+  targetNamespace="http://exemple.com/bpel/store"
+  suppressJoinFailure="yes"
+  expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath1.0"
+  queryLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath1.0"
+  xmlns:bpel="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+  xmlns:man="http://exemple.com/manufacturer"
+  xmlns:ship="http://exemple.com/shipper"
+  xmlns:store="http://exemple.com/store"
+  xmlns:plnk="http://docs.oasis-open.org/wsbpel/2.0/plnktype">
+
+  <bpel:import importType="http://schemas.xmlsoap.org/wsdl/" namespace="http://exemple.com/store" location="Store.wsdl"/>
+  <bpel:import importType="http://schemas.xmlsoap.org/wsdl/" namespace="http://exemple.com/manufacturer" location="Manufacturer.wsdl"/>
+  <bpel:import importType="http://schemas.xmlsoap.org/wsdl/" namespace="http://exemple.com/shipper" location="Shipper.wsdl"/>
+
+  <bpel:partnerLinks>
+    <bpel:partnerLink name="plFabricant" partnerLinkType="man:pltStoreManufacturer" myRole="store" partnerRole="manufacturer"/>
+  </bpel:partnerLinks>
+
+  <bpel:correlationSets>
+    <bpel:correlationSet name="csCommandeId" properties="store:propCommandeId"/>
+  </bpel:correlationSets>
+
+  <bpel:variables>
+    <bpel:variable name="varRestock" messageType="store:productInfoMessage"/>
+    <bpel:variable name="varCommande" messageType="man:orderDetailsMessage"/>
+    <bpel:variable name="varStatutFabrication" messageType="store:manufacturingStatusMessage"/>
+    <bpel:variable name="varStatutExpedition" messageType="store:shippingStatusMessage"/>
+  </bpel:variables>
+
+  <bpel:sequence name="fluxMagasin">
+    <bpel:receive name="demarrerReapprovisionnement"
+      partnerLink="plFabricant"
+      portType="store:StorePortType"
+      operation="startRestock"
+      variable="varRestock"
+      createInstance="yes">
+      <bpel:correlations>
+        <bpel:correlation set="csCommandeId" initiate="yes"/>
+      </bpel:correlations>
+    </bpel:receive>
+
+    <bpel:assign name="preparerCommandeFabricant">
+      <bpel:copy>
+        <bpel:from variable="varRestock" part="payload" query="/store:productInfo/store:commandeId"/>
+        <bpel:to variable="varCommande" part="payload" query="/man:orderDetails/man:commandeId"/>
+      </bpel:copy>
+      <bpel:copy>
+        <bpel:from variable="varRestock" part="payload" query="/store:productInfo/store:idProduit"/>
+        <bpel:to variable="varCommande" part="payload" query="/man:orderDetails/man:idProduit"/>
+      </bpel:copy>
+      <bpel:copy>
+        <bpel:from variable="varRestock" part="payload" query="/store:productInfo/store:quantite"/>
+        <bpel:to variable="varCommande" part="payload" query="/man:orderDetails/man:quantite"/>
+      </bpel:copy>
+      <bpel:copy>
+        <bpel:from variable="varRestock" part="payload" query="/store:productInfo/store:adresseLivraison"/>
+        <bpel:to variable="varCommande" part="payload" query="/man:orderDetails/man:adresseLivraison"/>
+      </bpel:copy>
+    </bpel:assign>
+
+    <bpel:invoke name="commanderFabricant"
+      partnerLink="plFabricant"
+      portType="man:ManufacturerPortType"
+      operation="requestOrder"
+      inputVariable="varCommande"/>
+
+    <!-- Attente des deux callbacks asynchrones -->
+    <bpel:flow name="attenteCallbacks">
+      <bpel:receive name="recevoirStatutFabrication"
+        partnerLink="plFabricant"
+        portType="store:StorePortType"
+        operation="receiveManufacturingStatus"
+        variable="varStatutFabrication">
+        <bpel:correlations>
+          <bpel:correlation set="csCommandeId" initiate="no"/>
+        </bpel:correlations>
+      </bpel:receive>
+
+      <bpel:receive name="recevoirStatutExpedition"
+        partnerLink="plFabricant"
+        portType="store:StorePortType"
+        operation="receiveShippingStatus"
+        variable="varStatutExpedition">
+        <bpel:correlations>
+          <bpel:correlation set="csCommandeId" initiate="no"/>
+        </bpel:correlations>
+      </bpel:receive>
+    </bpel:flow>
+  </bpel:sequence>
+</bpel:process>

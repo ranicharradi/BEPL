@@ -1,0 +1,42 @@
+<deploy xmlns="http://www.apache.org/ode/schemas/dd/2007/03"
+        xmlns:pm="http://exemple.com/bpel/manufacturer"
+        xmlns:ps="http://exemple.com/bpel/shipper"
+        xmlns:pst="http://exemple.com/bpel/store"
+        xmlns:man="http://exemple.com/manufacturer"
+        xmlns:ship="http://exemple.com/shipper"
+        xmlns:store="http://exemple.com/store">
+
+  <process name="pm:ManufacturerProcess">
+    <active>true</active>
+    <provide partnerLink="plMagasin">
+      <service name="man:ManufacturerService" port="ManufacturerPort"/>
+    </provide>
+    <invoke partnerLink="plTransporteur">
+      <service name="ship:ShipperService" port="ShipperPort"/>
+    </invoke>
+    <invoke partnerLink="plMagasin">
+      <service name="store:StoreService" port="StorePort"/>
+    </invoke>
+  </process>
+
+  <process name="ps:ShipperProcess">
+    <active>true</active>
+    <provide partnerLink="plMagasin">
+      <service name="ship:ShipperService" port="ShipperPort"/>
+    </provide>
+    <invoke partnerLink="plMagasin">
+      <service name="store:StoreService" port="StorePort"/>
+    </invoke>
+  </process>
+
+  <process name="pst:StoreProcess">
+    <active>true</active>
+    <provide partnerLink="plFabricant">
+      <service name="store:StoreService" port="StorePort"/>
+    </provide>
+    <invoke partnerLink="plFabricant">
+      <service name="man:ManufacturerService" port="ManufacturerPort"/>
+    </invoke>
+  </process>
+
+</deploy>

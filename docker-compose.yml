@@ -1,0 +1,12 @@
+services:
+  ode:
+    build: .
+    container_name: ode
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./deploy:/usr/local/tomcat/webapps/ode/WEB-INF/processes
+    command:
+      - /bin/sh
+      - -c
+      - rm -f /usr/local/tomcat/webapps/ode/WEB-INF/processes/*.deployed /usr/local/tomcat/webapps/ode/WEB-INF/processes/*.failed; exec catalina.sh run

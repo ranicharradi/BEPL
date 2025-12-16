@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpel:process name="ManufacturerProcess"
+  targetNamespace="http://exemple.com/bpel/manufacturer"
+  suppressJoinFailure="yes"
+  expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath1.0"
+  queryLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath1.0"
+  xmlns:bpel="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+  xmlns:man="http://exemple.com/manufacturer"
+  xmlns:ship="http://exemple.com/shipper"
+  xmlns:store="http://exemple.com/store"
+  xmlns:plnk="http://docs.oasis-open.org/wsbpel/2.0/plnktype">
+
+  <bpel:import importType="http://schemas.xmlsoap.org/wsdl/" namespace="http://exemple.com/manufacturer" location="Manufacturer.wsdl"/>
+  <bpel:import importType="http://schemas.xmlsoap.org/wsdl/" namespace="http://exemple.com/store" location="Store.wsdl"/>
+  <bpel:import importType="http://schemas.xmlsoap.org/wsdl/" namespace="http://exemple.com/shipper" location="Shipper.wsdl"/>
+
+  <bpel:partnerLinks>
+    <bpel:partnerLink name="plMagasin" partnerLinkType="man:pltStoreManufacturer" myRole="manufacturer" partnerRole="store"/>
+    <bpel:partnerLink name="plTransporteur" partnerLinkType="man:pltManufacturerShipper" partnerRole="shipper"/>
+  </bpel:partnerLinks>
+
+  <bpel:variables>
+    <bpel:variable name="varCommande" messageType="man:orderDetailsMessage"/>
+    <bpel:variable name="varExpedition" messageType="ship:shippingDetailsMessage"/>
+    <bpel:variable name="varStatutFabrication" messageType="store:manufacturingStatusMessage"/>
+  </bpel:variables>
+
+  <bpel:sequence name="fluxFabricant">
+    <bpel:receive name="recevoirCommande"
+      partnerLink="plMagasin"
+      portType="man:ManufacturerPortType"
+      operation="requestOrder"
+      variable="varCommande"
+      createInstance="yes"/>
+
+    <bpel:wait name="attendreFabrication">
+      <bpel:for>'PT30S'</bpel:for>
+    </bpel:wait>
+
+    <bpel:assign name="preparerDemandeTransport">
+      <bpel:copy>
+        <bpel:from variable="varCommande" part="payload" query="/man:orderDetails/man:commandeId"/>
+        <bpel:to variable="varExpedition" part="payload" query="/ship:shippingDetails/ship:commandeId"/>
+      </bpel:copy>
+      <bpel:copy>
+        <bpel:from variable="varCommande" part="payload" query="/man:orderDetails/man:adresseLivraison"/>
+        <bpel:to variable="varExpedition" part="payload" query="/ship:shippingDetails/ship:adresseLivraison"/>
+      </bpel:copy>
+    </bpel:assign>
+
+    <bpel:invoke name="appelerTransporteur"
+      partnerLink="plTransporteur"
+      portType="ship:ShipperPortType"
+      operation="requestShipping"
+      inputVariable="varExpedition"/>
+
+    <bpel:assign name="preparerStatutMagasin">
+      <bpel:copy>
+        <bpel:from variable="varCommande" part="payload" query="/man:orderDetails/man:commandeId"/>
+        <bpel:to variable="varStatutFabrication" part="payload" query="/store:manufacturingStatus/store:commandeId"/>
+      </bpel:copy>
+      <bpel:copy>
+        <bpel:from>
+          <bpel:literal>TERMINE</bpel:literal>
+        </bpel:from>
+        <bpel:to variable="varStatutFabrication" part="payload" query="/store:manufacturingStatus/store:statut"/>
+      </bpel:copy>
+    </bpel:assign>
+
+    <bpel:invoke name="notifierMagasin"
+      partnerLink="plMagasin"
+      portType="store:StorePortType"
+      operation="receiveManufacturingStatus"
+      inputVariable="varStatutFabrication"/>
+  </bpel:sequence>
+</bpel:process>
